@@ -9,7 +9,7 @@ from common.config import Config
 import os
 import torch
 from stable_baselines3.common.env_util import make_vec_env, make_atari_env
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy,CnnPolicy
 from torch.nn.modules.activation import Tanh,ReLU
@@ -62,10 +62,13 @@ def eval_policy(env, model):
 def train(config, log_path):
     if config.is_atari:
         make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
+        env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = VecFrameStack(env, n_stack=4)
     else:
         make_env = make_vec_env
-    env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
-                   vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
 
     if len(env.observation_space.shape) >=3:
         policy = 'CnnPolicy'
