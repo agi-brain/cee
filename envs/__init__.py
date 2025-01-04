@@ -534,3 +534,11 @@ register(
             "objcolor":"green", "objtype":"ball"}
 )
 
+
+# atari
+register(
+    id='ALE/Breakout-v5',
+    entry_point='envs.Atari.atari:Atari_Env',
+    kwargs={"env_id":"ALE/Breakout-v5","render_mode":"human","env_seed":1,"obs_type":"grayscale",
+                            "frameskip":4}
+)

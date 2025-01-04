@@ -1,3 +1,4 @@
+# import gymnasium as gym
 import gym
 import numpy as np
 from collections import deque
@@ -24,11 +25,13 @@ class Atari_Env(gym.Wrapper):
         noop_max: max times of noop action for env.reset().
     """
 
-    def __init__(self, env_id, env_seed, render_mode):
+    def __init__(self, env_id, env_seed, render_mode, obs_type, frameskip):
         self.env = gym.make(env_id,
                             render_mode=render_mode,
-                            obs_type="grayscale",
-                            frameskip=4)
+                            obs_type=obs_type,
+                            frameskip=frameskip
+                            )
+        #obs_type="grayscale",frameskip=4
         self.env.action_space.seed(seed=env_seed)
         self.env.unwrapped.reset(seed=env_seed)
         self.max_episode_steps = self.env._max_episode_steps
@@ -159,7 +162,7 @@ class LazyFrames(object):
 
 if __name__ == "__main__":
     import time
-    env = Atari_Env("ALE/Breakout-v5", env_seed=1, render_mode='rgb_array')
+    env = Atari_Env("ALE/Breakout-v5", env_seed=1, render_mode='rgb_array',obs_type='grayscale',frameskip=4)
     for i in range(10000):
         env.reset()
         done = False
