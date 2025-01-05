@@ -4,6 +4,8 @@ algorithm_type: PPO_Atari  # SoftQ, PPO
 total_timesteps: 100000
 env_kwargs:
   full_action_space: True  # Whether to use full action space (18 actions).
+  obs_type: 'grayscale'
+  frame_skip: 4
 vec_env_kwargs: 'empty_dict'
 is_atari: True
 play_model: False
