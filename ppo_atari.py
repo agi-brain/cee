@@ -62,9 +62,12 @@ def eval_policy(env, model):
 def train(config, log_path):
     if config.is_atari:
         make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
-        env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
+        env = make_env(config.env_id, n_envs=8, vec_env_cls=DummyVecEnv,
                        vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
         env = VecFrameStack(env, n_stack=4)
+
+        # origin n_envs=1 jin change 8
+
     else:
         make_env = make_vec_env
         env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
@@ -118,7 +121,7 @@ if __name__ == '__main__':
     config = bcast_config_vals(config)
     pretty(config)
 
-    config.play_model = True
+    config.play_model = False
 
     if 'n_actions' in config.env_kwargs.keys():
         n = config.env_kwargs.n_actions

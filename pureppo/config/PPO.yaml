@@ -1,14 +1,31 @@
 off_policy: False
+discrete: True
 
 policy:
-    verbose: 1
-    policy_kwargs: 'empty_dict'
-    ent_coef: 0.2
+  learning_rate: 2.5e-4
+  n_steps: 128  # 100
+  batch_size: 256
+  n_epochs: 4
+  gamma: 0.99
+  gae_lambda: 0.95
+  clip_range: 0.1
+  clip_range_vf: None
+  vf_coef: 0.5
+  policy_kwargs: 'empty_dict'
+  verbose: 1
+#  method: None
+#  absolute_threshold: True
+  ent_coef: 0.01
+#  buffer_size: 50000  # for action model
+#    ent_coef: 0.2
 
 
 
 learn:
   total_timesteps: 1000000
-  log_interval: 1
+  log_interval: 10
+
+
+
 
 
