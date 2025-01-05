@@ -11,14 +11,14 @@ import torch
 from stable_baselines3.common.env_util import make_vec_env, make_atari_env
 from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 from stable_baselines3 import PPO
-from stable_baselines3.ppo import MlpPolicy,CnnPolicy
-from torch.nn.modules.activation import Tanh,ReLU
+from stable_baselines3.ppo import MlpPolicy, CnnPolicy
+from torch.nn.modules.activation import Tanh, ReLU
 # from stable_baselines3.common.evaluation import evaluate_policy
 from common.evaluation import evaluate_policy_and_save
 from pureppo.ppo_savemodel import SavePPO
 import wandb
-torch.set_num_threads(8)
 
+torch.set_num_threads(8)
 
 
 # def eval_policy(env, model):
@@ -57,8 +57,6 @@ def eval_policy(env, model):
             traj_rewards.append(0)
 
 
-
-
 def train(config, log_path):
     if config.is_atari:
         make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
@@ -73,7 +71,7 @@ def train(config, log_path):
         env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
                        vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
 
-    if len(env.observation_space.shape) >=3:
+    if len(env.observation_space.shape) >= 3:
         policy = 'CnnPolicy'
     else:
         policy = 'MlpPolicy'
@@ -84,7 +82,7 @@ def train(config, log_path):
     print("Finished training...")
     if config.save_model:
         print("Saving model...")
-        model_path = os.path.join(log_path,"model")
+        model_path = os.path.join(log_path, "model")
         model.save(model_path)
         # test_mf_model = ActionModel.load(mf_model_path)
     if config.play_model:
@@ -130,7 +128,8 @@ if __name__ == '__main__':
     else:
         n = -1
 
-    experiment_name ="PurePPO_" + config.env_id + '_' + config.algorithm_type + '_' + "n" + str(n) + '_' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    experiment_name = "PurePPO_" + config.env_id + '_' + config.algorithm_type + '_' + "n" + str(
+        n) + '_' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     log_path = os.path.join("log_formal", experiment_name)
     if "wandb" in config:
         if config["wandb"]:
