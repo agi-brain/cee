@@ -1,8 +1,9 @@
 env_id: 'ALE/Breakout-v5'
 config_path: 'pureppo/config'
-algorithm_type: PPO  # SoftQ, PPO
+algorithm_type: PPO_Atari  # SoftQ, PPO
 total_timesteps: 100000
-env_kwargs: 'empty_dict'
+env_kwargs:
+  full_action_space: True  # Whether to use full action space (18 actions).
 vec_env_kwargs: 'empty_dict'
 is_atari: True
 play_model: False
