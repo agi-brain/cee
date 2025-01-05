@@ -16,6 +16,7 @@ from torch.nn.modules.activation import Tanh, ReLU
 # from stable_baselines3.common.evaluation import evaluate_policy
 from common.evaluation import evaluate_policy_and_save
 from pureppo.ppo_savemodel import SavePPO
+from pureppo.rnd import RNDCustomCallback, initialize_rnd
 import wandb
 
 torch.set_num_threads(8)
@@ -71,6 +72,16 @@ def train(config, log_path):
         env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
                        vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
 
+    # initialize the RND settings
+    use_rnd_curiosity = config.algorithm.rnd_curiosity if hasattr(config.algorithm, "rnd_curiosity") else False
+    if use_rnd_curiosity:
+        input_channels = 4  # Grayscale image, should be the same as n_stack.
+        output_dim = 512  # Example output dimension
+        target_network, predictor_network, optimizer = initialize_rnd(input_channels, output_dim)
+        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer)
+    else:
+        rnd_callback = None
+
     if len(env.observation_space.shape) >= 3:
         policy = 'CnnPolicy'
     else:
@@ -78,7 +89,8 @@ def train(config, log_path):
     # policy = 'MlpPolicy'
     model = SavePPO(policy, env, tensorboard_log=log_path, **config.algorithm.policy)
 
-    model.learn(**config.algorithm.learn)
+    model.learn(**config.algorithm.learn, callback=rnd_callback)
+
     print("Finished training...")
     if config.save_model:
         print("Saving model...")

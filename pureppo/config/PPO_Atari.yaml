@@ -1,5 +1,6 @@
 off_policy: False
 discrete: True
+rnd_curiosity: True
 
 policy:
   learning_rate: 2.5e-4
