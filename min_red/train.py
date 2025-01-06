@@ -2,13 +2,14 @@ import gym
 import envs
 import numpy as np
 import time
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv,VecFrameStack
 from min_red.action_model_trainer import ActionModelTrainer
 from min_red.mf_model_trainer import MfModelTrainer
 from min_red.config.parser_args import get_config
 from min_red.config.config import Config
 import argparse
-from stable_baselines3.common.env_util import make_vec_env
+from stable_baselines3.common.env_util import make_vec_env,make_atari_env
+
 from stable_baselines3 import PPO
 # from mixture.make_atari_stack_env import make_atari_stack_env
 from common.format_string import pretty
@@ -19,6 +20,8 @@ from stable_baselines3.common.logger import configure
 # new_logger = configure(tmp_path,["stdout","csv","tensorboard"])
 # import min_red.dqn.policies
 import torch
+
+from pureppo.rnd import RNDCustomCallback, initialize_rnd
 
 torch.set_num_threads(8)
 
@@ -46,14 +49,29 @@ def eval_policy(env, model):
 
 def train(config, log_path,logger):
     if config.is_atari:
-        make_env = make_atari_stack_env
+        make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
+        env = make_env(config.env_id, n_envs=8, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = VecFrameStack(env, n_stack=4)
+
+        # origin n_envs=1 jin change 8
+
     else:
         make_env = make_vec_env
-
-    env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
-                   vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
     # env = gym.make(config.env_id)
     obs_shape = list(env.observation_space.shape)
+
+    # initialize the RND settings
+    use_rnd_curiosity = config.algorithm.rnd_curiosity if hasattr(config.algorithm, "rnd_curiosity") else False
+    if use_rnd_curiosity:
+        input_channels = 4  # Grayscale image, should be the same as n_stack.
+        output_dim = 512  # Example output dimension
+        target_network, predictor_network, optimizer = initialize_rnd(input_channels, output_dim)
+        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer)
+    else:
+        rnd_callback = None
 
     if config.algorithm.discrete:
         from min_red.min_red_ppo import MinRedPPO as Algorithm
@@ -141,7 +159,7 @@ def train(config, log_path,logger):
     model.set_logger(logger)
     # model.set_logger(new_logger)
 
-    model.learn(**config.algorithm.learn)
+    model.learn(**config.algorithm.learn,callback=rnd_callback)
     print("Finished training...")
     if config.save_model:
         print("Saving model...")
