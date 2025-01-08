@@ -66,7 +66,6 @@ def train(config, log_path):
         env = VecFrameStack(env, n_stack=4)
 
         # origin n_envs=1 jin change 8
-
     else:
         make_env = make_vec_env
         env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
@@ -78,7 +77,7 @@ def train(config, log_path):
         input_channels = 4  # Grayscale image, should be the same as n_stack.
         output_dim = 512  # Example output dimension
         target_network, predictor_network, optimizer = initialize_rnd(input_channels, output_dim, config.device)
-        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer)
+        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer, device=config.device)
     else:
         rnd_callback = None
 

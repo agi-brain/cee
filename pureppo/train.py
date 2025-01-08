@@ -8,16 +8,19 @@ from common.parser_args import get_config
 from common.config import Config
 import os
 import torch
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.env_util import make_vec_env, make_atari_env
+from stable_baselines3.common.vec_env import DummyVecEnv, VecFrameStack
 from stable_baselines3 import PPO
-from stable_baselines3.ppo import MlpPolicy,CnnPolicy
-from torch.nn.modules.activation import Tanh,ReLU
+from stable_baselines3.ppo import MlpPolicy, CnnPolicy
+from torch.nn.modules.activation import Tanh, ReLU
 # from stable_baselines3.common.evaluation import evaluate_policy
 from common.evaluation import evaluate_policy_and_save
 from .ppo_savemodel import SavePPO
+from .rnd import RNDCustomCallback, initialize_rnd
 import wandb
+
 torch.set_num_threads(8)
+
 
 # def eval_policy(env, model):
 #     obs = env.reset()
@@ -55,28 +58,42 @@ def eval_policy(env, model):
             traj_rewards.append(0)
 
 
-
-
 def train(config, log_path):
     if config.is_atari:
-        make_env = make_atari_stack_env
+        make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
+        env = make_env(config.env_id, n_envs=8, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = VecFrameStack(env, n_stack=4)
+
+        # origin n_envs=1 jin change 8
     else:
         make_env = make_vec_env
-    env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
-                   vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
 
-    if len(env.observation_space.shape) >=3:
+    # initialize the RND settings
+    use_rnd_curiosity = config.algorithm.rnd_curiosity if hasattr(config.algorithm, "rnd_curiosity") else False
+    if use_rnd_curiosity:
+        input_channels = 4  # Grayscale image, should be the same as n_stack.
+        output_dim = 512  # Example output dimension
+        target_network, predictor_network, optimizer = initialize_rnd(input_channels, output_dim, config.device)
+        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer, device=config.device)
+    else:
+        rnd_callback = None
+
+    if len(env.observation_space.shape) >= 3:
         policy = 'CnnPolicy'
     else:
         policy = 'MlpPolicy'
     # policy = 'MlpPolicy'
     model = SavePPO(policy, env, tensorboard_log=log_path, **config.algorithm.policy)
 
-    model.learn(**config.algorithm.learn)
+    model.learn(**config.algorithm.learn, callback=rnd_callback)
+
     print("Finished training...")
     if config.save_model:
         print("Saving model...")
-        model_path = os.path.join(log_path,"model")
+        model_path = os.path.join(log_path, "model")
         model.save(model_path)
         # test_mf_model = ActionModel.load(mf_model_path)
     if config.play_model:
@@ -122,7 +139,8 @@ if __name__ == '__main__':
     else:
         n = -1
 
-    experiment_name ="PurePPO_" + config.env_id + '_' + config.algorithm_type + '_' + "n" + str(n) + '_' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    experiment_name = "PurePPO_" + config.env_id + '_' + config.algorithm_type + '_' + "n" + str(
+        n) + '_' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     log_path = os.path.join("log_formal", experiment_name)
     if "wandb" in config:
         if config["wandb"]:
