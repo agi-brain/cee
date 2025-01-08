@@ -5,8 +5,8 @@ import time
 # index= 0
 
 # envs = [all_envs[index]]
-# envs = ['ALE/MsPacman-v5','ALE/Qbert-v5','DemonAttack-v5','BeamRider-v5']
-envs = ['ALE/MsPacman-v5']
+envs = ['ALE/MsPacman-v5','ALE/Qbert-v5','ALE/DemonAttack-v5','ALE/BeamRider-v5']
+# envs = ['ALE/MsPacman-v5']
 config_name = 'atari'
 
 alg = 'PPO_Atari'
