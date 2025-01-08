@@ -16,7 +16,7 @@ from torch.nn.modules.activation import Tanh, ReLU
 # from stable_baselines3.common.evaluation import evaluate_policy
 from common.evaluation import evaluate_policy_and_save
 from .ppo_savemodel import SavePPO
-from pureppo.rnd import RNDCustomCallback, initialize_rnd
+from .rnd import RNDCustomCallback, initialize_rnd
 import wandb
 
 torch.set_num_threads(8)
@@ -77,7 +77,7 @@ def train(config, log_path):
         input_channels = 4  # Grayscale image, should be the same as n_stack.
         output_dim = 512  # Example output dimension
         target_network, predictor_network, optimizer = initialize_rnd(input_channels, output_dim, config.device)
-        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer)
+        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer, device=config.device)
     else:
         rnd_callback = None
 

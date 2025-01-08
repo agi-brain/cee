@@ -36,15 +36,17 @@ def initialize_rnd(input_channels=1, output_dim=512, device: Union[torch.device,
 
 
 class RNDCustomCallback(BaseCallback):
-    def __init__(self, target_network, predictor_network, optimizer, verbose=0):
+    def __init__(self, target_network, predictor_network, optimizer, verbose=0,
+                 device: Union[torch.device, str] = "auto"):
         super(RNDCustomCallback, self).__init__(verbose)
         self.target_network = target_network
         self.predictor_network = predictor_network
         self.optimizer = optimizer
+        self.device = device
 
     def _on_step(self) -> bool:
         obs = self.locals["new_obs"]
-        obs_tensor = torch.tensor(obs, dtype=torch.float32)
+        obs_tensor = torch.tensor(obs, dtype=torch.float32).to(self.device)
 
         target_output = self.target_network(obs_tensor)
         predictor_output = self.predictor_network(obs_tensor)
