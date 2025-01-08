@@ -18,6 +18,7 @@ from common.evaluation import evaluate_policy_and_save
 from pureppo.ppo_savemodel import SavePPO
 from pureppo.rnd import RNDCustomCallback, initialize_rnd
 import wandb
+import GPUtil
 
 torch.set_num_threads(8)
 
@@ -107,7 +108,9 @@ def bcast_config_vals(config):
     algorithm_config = Config(os.path.join(config.config_path, config.algorithm_type))
     config.merge({"algorithm": algorithm_config}, override=False)
     config.algorithm.learn.total_timesteps = config.total_timesteps
-    config.device = torch.device(config.device)
+    if config.device is not "cpu":
+        deviceIds = GPUtil.getFirstAvailable(order='memory', maxLoad=0.8, maxMemory=0.8)
+        config.device = torch.device(f'cuda:{deviceIds[0]}')
     config.algorithm.policy["device"] = config.device
     if "activation_fn" in config.algorithm.policy.policy_kwargs:
         activation_fn = config.algorithm.policy.policy_kwargs["activation_fn"]
