@@ -5,7 +5,8 @@ import time
 # index= 0
 
 # envs = [all_envs[index]]
-envs = ['ALE/MsPacman-v5','ALE/Qbert-v5','DemonAttack-v5','BeamRider-v5']
+# envs = ['ALE/MsPacman-v5','ALE/Qbert-v5','DemonAttack-v5','BeamRider-v5']
+envs = ['ALE/MsPacman-v5']
 config_name = 'atari'
 
 alg = 'PPO_Atari'
@@ -16,7 +17,7 @@ log_interval = 1
 
 for trials in range(n_repeats):
         for env in envs:
-            cmd_line = f"python -m maskppo.ppo_train" \
+            cmd_line = f"python -m pureppo.train" \
                        f" --f pureppo/config/{config_name} " \
                        f" --algorithm_type {alg} " \
                        f" --env_id {env}" \
