@@ -107,6 +107,7 @@ def bcast_config_vals(config):
     algorithm_config = Config(os.path.join(config.config_path, config.algorithm_type))
     config.merge({"algorithm": algorithm_config}, override=False)
     config.algorithm.learn.total_timesteps = config.total_timesteps
+    config.device = torch.device(config.device)
     config.algorithm.policy["device"] = config.device
     if "activation_fn" in config.algorithm.policy.policy_kwargs:
         activation_fn = config.algorithm.policy.policy_kwargs["activation_fn"]

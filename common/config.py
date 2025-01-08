@@ -6,7 +6,7 @@ import GPUtil
 
 
 class Config(dict):
-    def __init__(self, name='default', d=None, add_device=True):
+    def __init__(self, name='default', d=None, add_device=False):
         if d:
             self._load_from_dict(d)
         else:
@@ -63,8 +63,8 @@ class Config(dict):
 
     def _load_from_dict(self, d):
         for key, val in d.items():
-            if key == 'device':
-                continue
+            # if key == 'device':
+            #     continue
             if type(val) == str:
                 if val.lower() == 'nan' or val.lower() == 'none':
                     val = None

@@ -10,3 +10,4 @@ vec_env_kwargs: 'empty_dict'
 is_atari: True
 play_model: False
 save_model: True
+device: 0
