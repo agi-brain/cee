@@ -66,7 +66,6 @@ def train(config, log_path):
         env = VecFrameStack(env, n_stack=4)
 
         # origin n_envs=1 jin change 8
-
     else:
         make_env = make_vec_env
         env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
