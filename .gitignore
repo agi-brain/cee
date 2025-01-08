@@ -9,4 +9,5 @@ log
 log_formal
 *.pyc
 envs/__pycache__
+*/__pycache__
 

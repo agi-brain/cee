@@ -5,7 +5,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 
 
 class RNDNetwork(nn.Module):
-    def __init__(self, input_channels=1, output_dim=512):
+    def __init__(self, input_channels=1, output_dim=512, device=torch.device('auto')):
         super(RNDNetwork, self).__init__()
         self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
