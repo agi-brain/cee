@@ -83,7 +83,7 @@ def train(config, log_path):
         rnd_callback = None
 
     if len(env.observation_space.shape) >= 3:
-        policy = 'CnnPolicy'
+        policy = 'CnnPolicy'git add
     else:
         policy = 'MlpPolicy'
     # policy = 'MlpPolicy'
