@@ -2,6 +2,7 @@ env_id: 'ALE/Breakout-v5'
 config_path: 'pureppo/config'
 algorithm_type: PPO_Atari  # SoftQ, PPO
 total_timesteps: 100000
+seed: 2
 env_kwargs:
   full_action_space: True  # Whether to use full action space (18 actions).
 #  obs_type: 'grayscale'

@@ -58,7 +58,7 @@ def eval_policy(env, model):
             traj_rewards.append(0)
 
 
-def train(config, log_path):
+def train(config, log_path,seed):
     if config.is_atari:
         make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
         env = make_env(config.env_id, n_envs=8, vec_env_cls=DummyVecEnv,
@@ -86,7 +86,7 @@ def train(config, log_path):
     else:
         policy = 'MlpPolicy'
     # policy = 'MlpPolicy'
-    model = SavePPO(policy, env, tensorboard_log=log_path, **config.algorithm.policy)
+    model = SavePPO(policy, env, tensorboard_log=log_path, **config.algorithm.policy,seed=seed)
 
     model.learn(**config.algorithm.learn, callback=rnd_callback)
 
@@ -123,6 +123,7 @@ def bcast_config_vals(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--f", type=str, default="pureppo/config/atari")
+    parser.add_argument('--seed', type=int, default=1)
     args, extra_args = parser.parse_known_args()
     # get default parameters in this environment and override with extra_args
     config = get_config(args.f)
@@ -131,7 +132,7 @@ if __name__ == '__main__':
     pretty(config)
 
     config.play_model = False
-
+    seed = args.seed
     if 'n_actions' in config.env_kwargs.keys():
         n = config.env_kwargs.n_actions
     elif 'n_redundancies' in config.env_kwargs.keys():
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     else:
         n = -1
 
-    experiment_name = "PurePPO_" + config.env_id + '_' + config.algorithm_type + '_' + "n" + str(
+    experiment_name = "PurePPO_" + config.env_id + '_'+ 'seed_'+str(config.seed) + config.algorithm_type + '_' + "n" + str(
         n) + '_' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     log_path = os.path.join("log_formal", experiment_name)
     if "wandb" in config:
@@ -156,5 +157,5 @@ if __name__ == '__main__':
                 name=experiment_name
                 # dir=str(log_path)
             )
-    train(config, log_path)
+    train(config, log_path,seed=seed)
     wandb.finish()

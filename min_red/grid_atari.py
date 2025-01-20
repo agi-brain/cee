@@ -1,7 +1,7 @@
 import os
 import time
 
-all_envs = ['ALE/MsPacman-v5']
+all_envs = ['ALE/BeamRider-v5']
 index= 0
 
 envs = [all_envs[index]]
