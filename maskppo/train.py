@@ -8,8 +8,8 @@ from common.parser_args import get_config
 from common.config import Config
 import os
 import torch
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.env_util import make_vec_env,make_atari_env
+from stable_baselines3.common.vec_env import DummyVecEnv,VecFrameStack
 from stable_baselines3 import PPO
 from stable_baselines3.ppo import MlpPolicy,CnnPolicy
 from torch.nn.modules.activation import Tanh,ReLU
@@ -18,15 +18,17 @@ from common.evaluation import evaluate_policy_and_save
 
 # from .maskppo import MaskPPO #origin run in terminal
 
-from .maskppo import MaskPPO
+from .maskppo import MaskPPO # terminal
+#from maskppo import MaskPPO  # run in pycharm
+
+from pureppo.rnd import RNDCustomCallback, initialize_rnd
 
 import wandb
 torch.set_num_threads(8)
 
-
 # add the Pre-training mask to here
 Env_mask_dict = {"GoToPositionBonus-v0":"Mask_GoToPositionBonus-v0_Nill_PPO_n-1_2024-04-16-10-45-41",
-        "unlockpickupar-v0":"SF_Mask_unlockpickupar-v0_Nill_PPO_n-1_2024-05-11-11-26-20",
+        "unlockpickupar-v0":"SF_Mask_unlockpickupar-v0_Nill_PPO_n-1_2024-05-11-11-26-40",
         "girdCL-v0": "Mask_girdCL-v0_random_PPO_n6_2024-04-15-10-44-04",
         "GoToR3BlueKeyAddPositionBonus-v0": "Mask_GoToPositionBonus-v0_Nill_PPO_n-1_2024-04-16-10-45-41",
         "GoToR3GreenBoxAddPositionBonus-v0": "Mask_GoToPositionBonus-v0_Nill_PPO_n-1_2024-04-16-10-45-41",
@@ -38,17 +40,31 @@ Env_mask_dict = {"GoToPositionBonus-v0":"Mask_GoToPositionBonus-v0_Nill_PPO_n-1_
         "GoToDoorOpenR2RedBallAR-v0":"SF_Mask_GoToDoorOpenR2PositionBonus-v0_Nill_PPO_n-1_2024-04-26-08-57-43",
         "GoToDoorOpenR2BlueBallAR-v0":"SF_Mask_GoToDoorOpenR2PositionBonus-v0_Nill_PPO_n-1_2024-04-26-08-57-43",
         "GoToDoorOpenR2GreenBallAR-v0":"SF_Mask_GoToDoorOpenR2PositionBonus-v0_Nill_PPO_n-1_2024-04-26-08-57-43",
+        "ALE/BeamRider-v5":"BeamRider-v5_Nill_PPO_Atari_n-1_2025-01-07-15-01-17",
 
 }
 
 
 def train(config, log_path, mask_path, mask_flag, mask_threshold):
     if config.is_atari:
-        make_env = make_atari_stack_env
+        make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
+        env = make_env(config.env_id, n_envs=8, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = VecFrameStack(env, n_stack=4)
+
     else:
         make_env = make_vec_env
-    env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
-                   vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+        env = make_env(config.env_id, n_envs=1, vec_env_cls=DummyVecEnv,
+                       vec_env_kwargs=config.vec_env_kwargs, env_kwargs=config.env_kwargs)
+
+    use_rnd_curiosity = config.algorithm.rnd_curiosity if hasattr(config.algorithm, "rnd_curiosity") else False
+    if use_rnd_curiosity:
+        input_channels = 4  # Grayscale image, should be the same as n_stack.
+        output_dim = 512  # Example output dimension
+        target_network, predictor_network, optimizer = initialize_rnd(input_channels, output_dim, config.device)
+        rnd_callback = RNDCustomCallback(target_network, predictor_network, optimizer,device=config.device)
+    else:
+        rnd_callback = None
 
     if len(env.observation_space.shape) >=3:
         policy = 'CnnPolicy'
@@ -62,7 +78,7 @@ def train(config, log_path, mask_path, mask_flag, mask_threshold):
     model = MaskPPO(policy, env, tensorboard_log=log_path, mf_model=mf_model, mask_flag=mask_flag,
             mask_threshold=mask_threshold,**config.algorithm.policy)
 
-    model.learn(**config.algorithm.learn)
+    model.learn(**config.algorithm.learn, callback=rnd_callback)
     print("Finished training...")
     if config.save_model:
         print("Saving model...")
@@ -94,12 +110,16 @@ def bcast_config_vals(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--f", type=str, default="none")
-    parser.add_argument('--mask', type=str, default="False")
+    parser.add_argument('--mask', type=str, default="True")
     parser.add_argument('--mask_threshold', type=float, default=0.5)
     args, extra_args = parser.parse_known_args()
 
+    #args.f = "./config/atari"
+
     # get default parameters in this environment and override with extra_args
     config = get_config(args.f)
+    #config["config_path"] = "./config"
+
     config = bcast_config_vals(config)
     pretty(config)
 
@@ -114,7 +134,7 @@ if __name__ == '__main__':
         goal = config.env_kwargs.goal
         goalstr = '_Goal'+str(goal)
 
-    experiment_name = "CEE_" + str(config.env_id) + '_' +"mask"+ str(config.algorithm_type) + goalstr + '_' \
+    experiment_name = "CEE_"+ str(config.env_id) + '_' +""+"mask"+ str(config.algorithm_type) + goalstr + '_' \
             + '_' + time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
 
 
@@ -139,4 +159,3 @@ if __name__ == '__main__':
     #         )
     train(config, log_path, mask_path, mask_flag, mask_threshold=mask_threshold)
     # wandb.finish()
-

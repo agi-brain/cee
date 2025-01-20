@@ -1,12 +1,7 @@
 import os
 import time
 
-all_envs = ['ALE/MsPacman-v5','ALE/Qbert-v5','ALE/DemonAttack-v5','ALE/BeamRider-v5','ALE/KungFuMaster-v5','ALE/TimePilot-v5','ALE/Kangaroo-v5','ALE/WizardOfWor-v5','ALE/Phoenix-v5','ALE/Carnival-v5','ALE/AirRaid-v5']
-index= 8
-
-#envs = [all_envs[index]]
-
-envs = ['ALE/NameThisGame-v5']
+envs = ['ALE/BeamRider-v5']
 
 
 config_name = 'atari'
