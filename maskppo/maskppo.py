@@ -25,7 +25,8 @@ from stable_baselines3.common.logger import Figure
 from .heatmap import heatmap
 import torch
 import torch.nn.functional
-from common.classify_points import classify_points, find_redundant_positions,mini_actions_c
+from common.classify_points import classify_points_npm, find_redundant_positions_npm,mini_actions_c,classify_points_cee,find_redundant_positions_cee,classify_points_random,find_redundant_positions_random
+
 
 import matplotlib.pyplot as plt
 from copy import deepcopy
@@ -81,6 +82,7 @@ class MaskPPO(PPO):
         mf_model = None,
         mask_flag = False,
         mask_threshold = 2,
+        method: str = "cee",
     ):
         super(MaskPPO, self).__init__(
             policy=policy,
@@ -116,6 +118,9 @@ class MaskPPO(PPO):
 
         self.mask_threshold = mask_threshold
         self.policy.mask_threshold = mask_threshold
+
+        self.method = method
+        self.policy.method = method
 
         # def _predict(self, observation: th.Tensor, deterministic: bool = False) -> th.Tensor:
         #     """
@@ -166,26 +171,23 @@ class MaskPPO(PPO):
                     # Similarity_Factor_Matrix
                     SF_Matrix = np.diag(np.array(mf_predict_list)) - np.array(mf_predict_list)
 
+                if self.method == "cee":
+                    N_matrix = np.diag(np.array(mf_predict_list))
+                    classes,classes_actions = classify_points_cee(SF_Matrix,threshold=self.mask_threshold)
+                    minred_actions_list, redundant_actions_list = find_redundant_positions_cee(classes, classes_actions, N_matrix)
 
-                # ***********************NPM*******************************************
-                # classify actions and redundant_actions_list
-                #classes =classify_points(SF_Matrix,threshold=self.mask_threshold) #origin code
-                #minred_actions_list, redundant_actions_list = find_redundant_positions(classes)
+                elif self.method == "npm":
+                    classes =classify_points_npm(SF_Matrix,threshold=self.mask_threshold) #origin code
+                    minred_actions_list, redundant_actions_list = find_redundant_positions_npm(classes)
 
+                elif self.method == "cee-woc":
+                    N_matrix = np.diag(np.array(mf_predict_list))
+                    minred_actions_list, redundant_actions_list = mini_actions_c(N_matrix)
 
+                elif self.method == "npm_random":
+                    classes =classify_points_random(SF_Matrix,threshold=self.mask_threshold) #origin code
+                    minred_actions_list, redundant_actions_list = find_redundant_positions_random(classes)
 
-               # ***************************CEE**************************
-                N_matrix = np.diag(np.array(mf_predict_list))
-                classes,classes_actions = classify_points(SF_Matrix,threshold=self.mask_threshold)
-                minred_actions_list, redundant_actions_list = find_redundant_positions(classes, classes_actions, N_matrix)
-
-
-
-#----------------------cee-woc-------------------
-
-              #  N_matrix = np.diag(np.array(mf_predict_list))
-              #  minred_actions_list, redundant_actions_list = mini_actions_c(N_matrix)
-                #mask logits accoring to redundant_actions_list
                 distribution = self._get_action_dist_from_latent(latent_pi,redundant_actions_list=redundant_actions_list)
             else:
                 distribution = self._get_action_dist_from_latent(latent_pi)

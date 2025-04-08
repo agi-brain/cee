@@ -45,7 +45,7 @@ Env_mask_dict = {"GoToPositionBonus-v0":"Mask_GoToPositionBonus-v0_Nill_PPO_n-1_
 }
 
 
-def train(config, log_path, mask_path, mask_flag, mask_threshold):
+def train(config, log_path, mask_path, mask_flag, mask_threshold,method="cee"):
     if config.is_atari:
         make_env = make_atari_env  # make_atari_stack_env, # tecaher make_vec_env
         env = make_env(config.env_id, n_envs=8, vec_env_cls=DummyVecEnv,
@@ -76,7 +76,7 @@ def train(config, log_path, mask_path, mask_flag, mask_threshold):
     mf_model = ActionModel.load(mf_model_path,device=config.device)
 
     model = MaskPPO(policy, env, tensorboard_log=log_path, mf_model=mf_model, mask_flag=mask_flag,
-            mask_threshold=mask_threshold,**config.algorithm.policy)
+            mask_threshold=mask_threshold,**config.algorithm.policy,method=method)
 
     model.learn(**config.algorithm.learn, callback=rnd_callback)
     print("Finished training...")
@@ -112,6 +112,9 @@ if __name__ == '__main__':
     parser.add_argument("--f", type=str, default="none")
     parser.add_argument('--mask', type=str, default="True")
     parser.add_argument('--mask_threshold', type=float, default=0.5)
+    parser.add_argument('--method', type=str, default="npm_random",
+                        choices=["npm", "cee", "cee-woc","npm_random"],
+                        help="Method to use: npm, cee, or cee-woc")
     args, extra_args = parser.parse_known_args()
 
     #args.f = "./config/atari"
@@ -157,5 +160,5 @@ if __name__ == '__main__':
     #             name=experiment_name
     #             # dir=str(log_path)
     #         )
-    train(config, log_path, mask_path, mask_flag, mask_threshold=mask_threshold)
+    train(config, log_path, mask_path, mask_flag, mask_threshold=mask_threshold,method=args.method)
     # wandb.finish()
