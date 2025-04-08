@@ -91,7 +91,7 @@ def classify_points_cee(dist_matrix, threshold=1):
 
 def find_redundant_positions_cee(lst, classes_classification, n_matrix):
 
-   c_threshold = 0.3  #threshold
+   c_threshold = 0.8  #threshold
    mini_actions_space = []
    new_matrix = n_matrix.copy()
    for value in list(classes_classification.values()):
